@@ -1,0 +1,4 @@
+poke-env
+stable-baselines3[extra]
+matplotlib
+pandas
