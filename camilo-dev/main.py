@@ -92,15 +92,23 @@ def start_single_agent_env_run():
 
 
 
-async def main(env: SingleAgentWrapper):
+async def main():
     # Jugadores que usan RandomBattle (equipos generados aleatoriamente)
-    dqn_player = env.env.agent1
+    eval_env = MySinglesEnv(
+        battle_format=f"gen9randombattle",
+        log_level=25,
+        start_challenging=True,
+        strict=False,
+    )
 
-    random_opponent = env.env.agent2
+    dqn_player = SingleAgentWrapper(eval_env, RandomPlayer())
+
+    model = DQN.load("dqn_pokemon_model")
+
 
     # Ejecutar una batalla
     print("##### Comenzando evaluación #####")
-    results = await cross_evaluate([dqn_player, random_opponent], n_challenges=10)
+    results = await cross_evaluate([dqn_player, RandomPlayer()], n_challenges=10)
     print("Resultados:", results)
 
 
@@ -140,4 +148,4 @@ if __name__ == "__main__":
     print("##################### DQN ENTRENADO #####################")
     model.save("dqn_pokemon_model")
 
-    asyncio.run(main(env))
+    # asyncio.run(main())
