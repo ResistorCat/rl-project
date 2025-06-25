@@ -1,4 +1,12 @@
-from baseline.players import DQNPlayer, SimpleRandomPlayer
-from baseline.dqn_train import train
-from baseline.baseline_env import BaselineSinglesEnv
-from baseline.utils import evaluate_player, accept_challenges, simple_embed_battle
+from .players import DQNPlayer, SimpleRandomPlayer
+from .dqn_train import train
+from .baseline_env import BaselineSinglesEnv
+from .utils_evaluate import (
+  evaluate_player,
+  accept_challenges
+)
+from .utils_model import (
+  simple_embed_battle,
+  simple_order_to_action,
+  simple_action_to_order
+)

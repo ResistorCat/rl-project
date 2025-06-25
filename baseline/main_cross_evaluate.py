@@ -3,16 +3,16 @@ from poke_env import AccountConfiguration, cross_evaluate
 from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
-from baseline.players import DQNPlayer, SimpleRandomPlayer
+from players import DQNPlayer, SimpleRandomPlayer
 
 
 ######################################
 COMPARE_WITH_RANDOM_PLAYER     = True
-COMPARE_WITH_MAX_PLAYER        = True
-COMPARE_WITH_HEURISTICS_PLAYER = True
+COMPARE_WITH_MAX_PLAYER        = False
+COMPARE_WITH_HEURISTICS_PLAYER = False
 COMPARE_WITH_DQN_PLAYER        = True
 
-NUM_CHALLENGES = 10
+NUM_CHALLENGES = 50
 ######################################
 
 

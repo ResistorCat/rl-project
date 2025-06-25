@@ -2,8 +2,8 @@ from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
 from poke_env.player import SingleAgentWrapper
 
-from baseline import BaselineSinglesEnv
-from baseline import SimpleRandomPlayer
+from baseline_env import BaselineSinglesEnv
+from players import SimpleRandomPlayer
 
 
 def train(

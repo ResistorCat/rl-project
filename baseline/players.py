@@ -2,17 +2,25 @@ import random
 from stable_baselines3 import DQN
 from poke_env.player import Player
 from poke_env.environment import Battle
-from poke_env.player import BattleOrder
+from poke_env.player import BattleOrder, DefaultBattleOrder
+from poke_env import AccountConfiguration
+import torch
+import numpy as np
 
-from baseline import simple_embed_battle
+from utils_model import simple_embed_battle, simple_action_to_order
 
+"""
+ Acción (0, ..., 5)  significa Switch(index)
+ Acción (6, 7, 8, 9) significa Move(index - 6)
+"""
 
 class DQNPlayer(Player):
     def __init__(self, model_path, account_configuration, battle_format="gen9randombattle"):
         super().__init__(battle_format=battle_format, account_configuration=account_configuration)
         self.model = DQN.load(model_path)
 
-        self.obs_dim = 10
+        self.observations_dim = 10
+        self.actions_dim = 4 + 6 # 4 Moves and 6 Switches
         self.times_random_choice = 0
         self.times_made_a_choice = 0
     
@@ -22,24 +30,41 @@ class DQNPlayer(Player):
 
     def choose_move(self, battle):
         self.times_made_a_choice += 1
-        obs = self.embed_battle(battle)
-        action, _ = self.model.predict(obs, deterministic=True)
-        
-        # Si la acción es un índice de move
-        if action < len(battle.available_moves):
-            move = battle.available_moves[action]
-            return self.create_order(move)
-        # Si la acción corresponde a un switch
-        switch_index = action - len(battle.available_moves)
-        if switch_index < len(battle.available_switches):
-            switch = battle.available_switches[switch_index]
-            return self.create_order(switch)
-        
-        # Fallback: movimiento o switch aleatorio válido
-        # print(">>>>>>> Selecciona una acción al azar")
+
+        # Protege contra el estado inicial del combate
+        if (
+          battle.active_pokemon is None or
+          len(battle.available_moves) == 0 and len(battle.available_switches) == 0
+        ):
+          self.times_random_choice += 1
+          print(">>>> Estado inicial incompleto, acción aleatoria")
+          return self.choose_random_move(battle)
+        obs = self.embed_battle(battle).reshape(1, -1)
+        obs_tensor = torch.tensor(obs, dtype=torch.float32)
+
+        q_values = self.model.q_net(obs_tensor).detach().numpy()[0]
+
+        sorted_actions = np.argsort(q_values)[::-1]
+
+        # Buscar la mejor acción válida
+        for action in sorted_actions:
+          try:
+            order = simple_action_to_order(action, battle)
+            if not isinstance(order, DefaultBattleOrder):
+              print(f">>>> Acción válida seleccionada: {action}")
+              return order
+          except AssertionError as e:
+            print(f">>> Acción no me sirve: {e}")
+            continue  # Acción inválida, probar la siguiente
+
+        # action, _ = self.model.predict(obs, deterministic=True)
+
+        # order = simple_action_to_order(action, battle)
+
         self.times_random_choice += 1
-        return self.choose_random_move(battle)
-    
+        print(">>>> Elige acción por defecto")  
+        return self.choose_random_move(battle)  
+
     def choose_random_move(self, battle: Battle) -> BattleOrder:
       available_orders = [BattleOrder(move) for move in battle.available_moves]
       available_orders.extend(
@@ -57,7 +82,7 @@ class SimpleRandomPlayer(Player):
   Versión simplificada de RandomPlayer. Quita Teracristalizar en generación 9.
   """
 
-  def choose_move(self, battle: Battle) -> BattleOrder:
+  def choose_move(self, battle: Battle) -> BattleOrder:        
     for _ in range(3):
       order = self.generate_move(battle)
       try:
