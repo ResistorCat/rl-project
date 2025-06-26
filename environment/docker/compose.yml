@@ -1,0 +1,8 @@
+services:
+  pokemon-showdown:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: node pokemon-showdown start --no-security
+    ports:
+      - "8000:8000" # Expose port 8000 for the application
