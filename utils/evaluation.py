@@ -1,7 +1,7 @@
 from poke_env import AccountConfiguration, cross_evaluate
 from poke_env.player import SingleAgentWrapper
 
-from baseline.players import DQNPlayer, SimpleRandomPlayer
+from baseline.players import BaselinePlayer, SimpleRandomPlayer
 
 
 def single_agent_play_function(env: SingleAgentWrapper, n_battles: int):
@@ -30,29 +30,16 @@ def start_single_agent_env_run():
         env.close()
 
 
-async def evaluate_player(num_challenges: int = 100):
-
-    dqn_player = DQNPlayer(
-        "models/baseline_dqn_pokemon_model",
-        account_configuration=AccountConfiguration("BL DQN Bot", None)
-        )
-
-    results = await cross_evaluate([dqn_player, SimpleRandomPlayer()], n_challenges=num_challenges)
+async def evaluate_player(player: BaselinePlayer, num_challenges: int = 100):
+    results = await cross_evaluate([player, SimpleRandomPlayer()], n_challenges=num_challenges)
     print("Resultados:", results)
 
 
-async def accept_challenges(opponents: str | list[str] | None = None, num_challenges: int = 1):
+async def accept_challenges(player: BaselinePlayer, opponents: str | list[str] | None = None, num_challenges: int = 1):
   """
-  
+  En opponents puede listarse los nombres de usuario permitidos para desafiar al bot.
   """
   # Configuracion de la cuenta del Jugador / Bot. Autenticar si el servidor lo pide.
-  player_config = AccountConfiguration("DQNPlayer", None)
-
-  dqn_player = DQNPlayer(
-      account_configuration=player_config,
-      model_path="dqn_pokemon_model",
-      battle_format="gen9randombattle",
-  )
 
   print("Esperando desafíos... (Ctrl+C para detener)")
-  await dqn_player.accept_challenges(opponents, n_challenges=num_challenges)
+  await player.accept_challenges(opponents, n_challenges=num_challenges)

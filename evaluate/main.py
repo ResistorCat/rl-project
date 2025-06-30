@@ -3,7 +3,7 @@ from poke_env import AccountConfiguration, cross_evaluate
 from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
-from baseline.players import DQNPlayer, SimpleRandomPlayer
+from baseline.players import BaselinePlayer, SimpleRandomPlayer
 from dqn.player import OurDQNPlayer
 
 ##########################################
@@ -45,7 +45,7 @@ async def main(num_challenges: int = 5):
         # log_level=logging.INFO,
     )
 
-    dqn_player = DQNPlayer(
+    dqn_player = BaselinePlayer(
       "models/baseline_dqn_pokemon_model",
       account_configuration=AccountConfiguration("BL DQN Bot", None)
     )

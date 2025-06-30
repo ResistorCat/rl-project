@@ -2,7 +2,7 @@ from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
 from poke_env.player import SingleAgentWrapper
 
-from baseline.baseline_env import BaselineSinglesEnv
+from baseline.environment import BaselineSinglesEnv
 from baseline.players import SimpleRandomPlayer
 
 

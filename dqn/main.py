@@ -1,7 +1,9 @@
 import asyncio
+from poke_env import AccountConfiguration
+
 from dqn.train import train
 from dqn.player import OurDQNPlayer
-from utils.evaluation import accept_challenges
+from utils.evaluation import accept_challenges, evaluate_player
 
 ######################################
 TRAIN           = True
@@ -37,7 +39,11 @@ if __name__ == "__main__":
       csv_path = SAVE_CSV_PATH,
       model_path = SAVE_MODEL_PATH
     )
-  # if EVALUATE:
-  #   asyncio.run(evaluate_player())
+  our_first_dqn_player = OurDQNPlayer(
+    "models/our_dqn_pokemon_model",
+    account_configuration=AccountConfiguration("First DQN Bot", None)
+    )
+  if EVALUATE:
+    asyncio.run(evaluate_player(our_first_dqn_player))
   if CHALLENGE:
-    asyncio.run(accept_challenges())
+    asyncio.run(accept_challenges(our_first_dqn_player))

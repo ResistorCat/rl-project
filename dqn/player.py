@@ -1,8 +1,8 @@
 from dqn.embedding import enhanced_embed_battle
 from dqn.observation_space import get_embedding_dimension
-from baseline.players import DQNPlayer
+from baseline.players import BaselinePlayer
 
-class OurDQNPlayer(DQNPlayer):
+class OurDQNPlayer(BaselinePlayer):
   def __init__(self, model_path, account_configuration, battle_format="gen9randombattle"):
     super().__init__(model_path, account_configuration, battle_format)
 

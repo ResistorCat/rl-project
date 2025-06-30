@@ -3,7 +3,6 @@ from stable_baselines3 import DQN
 from poke_env.player import Player
 from poke_env.environment import Battle
 from poke_env.player import DefaultBattleOrder
-from poke_env import AccountConfiguration
 import torch
 import numpy as np
 
@@ -15,7 +14,7 @@ from libs.battle_order import BattleOrder
  Acción (6, 7, 8, 9) significa Move(index - 6)
 """
 
-class DQNPlayer(Player):
+class BaselinePlayer(Player):
     def __init__(self, model_path, account_configuration, battle_format="gen9randombattle"):
         super().__init__(battle_format=battle_format, account_configuration=account_configuration)
         self.model = DQN.load(model_path)
