@@ -2,9 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # El número que se usa para calcular el WIN RATIO
-WINDOW = 20
+WINDOW = 100
 
-df = pd.read_csv("dqn_results.monitor.csv", comment='#')
+df = pd.read_csv("results/baseline_dqn.monitor.csv", comment='#')
 
 df['win'] = (df['r'] > 0).astype(int)
 

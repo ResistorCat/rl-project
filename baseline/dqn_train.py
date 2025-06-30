@@ -2,8 +2,8 @@ from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
 from poke_env.player import SingleAgentWrapper
 
-from baseline_env import BaselineSinglesEnv
-from players import SimpleRandomPlayer
+from baseline.baseline_env import BaselineSinglesEnv
+from baseline.players import SimpleRandomPlayer
 
 
 def train(
@@ -24,8 +24,8 @@ def train(
   policy_kwargs=dict(net_arch=[64, 64]),
   device="cuda",
   total_timesteps=100_000,
-  csv_path: str = "dqn_results",
-  model_path: str = "dqn_pokemon_model"
+  csv_path: str = "results/baseline_dqn",
+  model_path: str = "models/baseline_dqn_pokemon_model"
   ):
 
   env = BaselineSinglesEnv(

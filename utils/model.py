@@ -1,9 +1,9 @@
 import numpy as np
-from poke_env.player import BattleOrder, DefaultBattleOrder, ForfeitBattleOrder, Player
+from poke_env.player import DefaultBattleOrder, ForfeitBattleOrder, Player
 from poke_env.environment import Pokemon, Battle, Move
+from libs.battle_order import BattleOrder
 
-
-def simple_embed_battle(battle):
+def simple_embed_battle(battle: Battle):
         # -1 indicates that the move does not have a base power
         # or is not available
         moves_base_power = -np.ones(4)
@@ -100,7 +100,8 @@ def simple_action_to_order(
             print(f">>>>>> Acción convertida a {order} <<<<<<")
             return order
         except AssertionError as e:
-            if not strict and str(e) == "invalid action":
+            if not strict and "invalid action" in str(e):
+                print(e)
                 return DefaultBattleOrder()
             else:
                 raise e

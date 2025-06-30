@@ -2,12 +2,13 @@ import random
 from stable_baselines3 import DQN
 from poke_env.player import Player
 from poke_env.environment import Battle
-from poke_env.player import BattleOrder, DefaultBattleOrder
+from poke_env.player import DefaultBattleOrder
 from poke_env import AccountConfiguration
 import torch
 import numpy as np
 
-from utils_model import simple_embed_battle, simple_action_to_order
+from utils import simple_embed_battle, simple_action_to_order
+from libs.battle_order import BattleOrder
 
 """
  Acción (0, ..., 5)  significa Switch(index)
@@ -75,6 +76,41 @@ class DQNPlayer(Player):
         return random.choice(available_orders)
       else:
         return Player.choose_default_move()
+    
+    @staticmethod
+    def create_order(
+        order,
+        mega: bool = False,
+        z_move: bool = False,
+        dynamax: bool = False,
+        terastallize: bool = False,
+        move_target: int = None,
+    ) -> BattleOrder:
+        """Formats an move order corresponding to the provided pokemon or move.
+
+        :param order: Move to make or Pokemon to switch to.
+        :type order: Move or Pokemon
+        :param mega: Whether to mega evolve the pokemon, if a move is chosen.
+        :type mega: bool
+        :param z_move: Whether to make a zmove, if a move is chosen.
+        :type z_move: bool
+        :param dynamax: Whether to dynamax, if a move is chosen.
+        :type dynamax: bool
+        :param terastallize: Whether to terastallize, if a move is chosen.
+        :type terastallize: bool
+        :param move_target: Target Pokemon slot of a given move
+        :type move_target: int
+        :return: Formatted move order
+        :rtype: str
+        """
+        return BattleOrder(
+            order,
+            mega=mega,
+            move_target=move_target,
+            z_move=z_move,
+            dynamax=dynamax,
+            terastallize=terastallize,
+        )
 
 
 class SimpleRandomPlayer(Player):

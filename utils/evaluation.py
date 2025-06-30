@@ -1,7 +1,7 @@
 from poke_env import AccountConfiguration, cross_evaluate
 from poke_env.player import SingleAgentWrapper
 
-from players import DQNPlayer, SimpleRandomPlayer
+from baseline.players import DQNPlayer, SimpleRandomPlayer
 
 
 def single_agent_play_function(env: SingleAgentWrapper, n_battles: int):
@@ -32,7 +32,10 @@ def start_single_agent_env_run():
 
 async def evaluate_player(num_challenges: int = 100):
 
-    dqn_player = DQNPlayer("dqn_pokemon_model")
+    dqn_player = DQNPlayer(
+        "models/baseline_dqn_pokemon_model",
+        account_configuration=AccountConfiguration("BL DQN Bot", None)
+        )
 
     results = await cross_evaluate([dqn_player, SimpleRandomPlayer()], n_challenges=num_challenges)
     print("Resultados:", results)
