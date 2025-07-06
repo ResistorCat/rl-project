@@ -96,3 +96,26 @@ def get_latest_model_path(model_type: RLModel):
     # Sort by modification time, most recent first
     models.sort(key=lambda x: x.stat().st_mtime, reverse=True)
     return models[0]
+
+
+def get_monitor_dir():
+    """
+    Get the monitor directory path for training logs.
+    
+    Returns:
+        Path: The monitor directory path (models/train)
+    """
+    monitor_dir = Path("models") / "train"
+    monitor_dir.mkdir(parents=True, exist_ok=True)
+    return monitor_dir
+
+
+def get_monitor_file_path():
+    """
+    Get the full path for the monitor file.
+    
+    Returns:
+        Path: The full path to the monitor file (models/train/latest.monitor.csv)
+    """
+    monitor_dir = get_monitor_dir()
+    return monitor_dir / "latest"

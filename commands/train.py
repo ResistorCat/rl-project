@@ -53,7 +53,7 @@ def train_command(
             strict=False,
         )
         random_player = RandomPlayer()
-        train_env = env.get_training_env(opponent=random_player)
+        train_env = env.get_training_env(opponent=random_player, enable_monitor=True)
 
         # Configure PokeEnv logging to reduce noise
         configure_poke_env_logging()

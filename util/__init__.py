@@ -11,6 +11,8 @@ from .model_utils import (
     get_model_path,
     list_saved_models,
     get_latest_model_path,
+    get_monitor_dir,
+    get_monitor_file_path,
 )
 
 __all__ = [
@@ -23,4 +25,6 @@ __all__ = [
     'get_model_path',
     'list_saved_models',
     'get_latest_model_path',
+    'get_monitor_dir',
+    'get_monitor_file_path',
 ]
