@@ -15,7 +15,7 @@ server = None
 NO_DOCKER = False
 
 app = typer.Typer(
-    help="CLI for training and evaluating Pokémon Showdown RL models",
+    help="CLI for training and evaluating Pokémon Showdown RL models. Use --dev flag for faster development testing.",
     add_completion=False,
 )
 
@@ -119,7 +119,15 @@ def cleanup():
 
 
 @app.command()
-def train(model_type: RLModel = RLModel.PPO, restart_server: bool = False):
+def train(
+    model_type: RLModel = RLModel.PPO, 
+    restart_server: bool = False,
+    dev: bool = typer.Option(
+        False,
+        "--dev",
+        help="Run in development mode (faster training with 5000 timesteps for testing)",
+    ),
+):
     """
     Train the model with the given name.
     """
@@ -127,6 +135,7 @@ def train(model_type: RLModel = RLModel.PPO, restart_server: bool = False):
     train_command(
         model_type=model_type,
         restart_server=restart_server,
+        dev_mode=dev,
         initialize_func=initialize,
         cleanup_func=cleanup,
         server=server,

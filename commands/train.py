@@ -14,6 +14,7 @@ from util import configure_poke_env_logging, RLModel, get_model_path
 def train_command(
     model_type: RLModel = RLModel.PPO,
     restart_server: bool = False,
+    dev_mode: bool = False,
     initialize_func=None,
     cleanup_func=None,
     server=None,
@@ -25,6 +26,7 @@ def train_command(
     Args:
         model_type: The type of model to train
         restart_server: Whether to restart the server before training
+        dev_mode: Whether to run in development mode (shorter training)
         initialize_func: Function to initialize the environment
         cleanup_func: Function to clean up resources
         server: Server instance for restart operations
@@ -57,11 +59,17 @@ def train_command(
         configure_poke_env_logging()
         logger.info("🔇 Configured PokeEnv logging to reduce verbosity")
 
+        # Log dev mode status
+        if dev_mode:
+            logger.info("🛠️ Running in DEVELOPMENT mode (faster training for testing)")
+        else:
+            logger.info("🏭 Running in PRODUCTION mode (full training)")
+
         logger.info(f"🚀 Training model: {model_type.value}")
 
         model_path = None
         if model_type == RLModel.PPO:
-            model_path = _train_ppo_model(train_env, logger)
+            model_path = _train_ppo_model(train_env, logger, dev_mode=dev_mode)
         elif model_type == RLModel.DQN:
             # Placeholder for DQN training logic
             logger.warning("⚠️ DQN training is not implemented yet.")
@@ -87,8 +95,15 @@ def train_command(
             cleanup_func()
 
 
-def _train_ppo_model(train_env, logger):
-    """Train a PPO model."""
+def _train_ppo_model(train_env, logger, dev_mode: bool = False):
+    """
+    Train a PPO model.
+    
+    Args:
+        train_env: The training environment
+        logger: Logger instance
+        dev_mode: Whether to run in development mode (shorter training)
+    """
     logger.info("🖥️ Using CPU device for training")
 
     # Wait a moment for environment to stabilize
@@ -100,8 +115,16 @@ def _train_ppo_model(train_env, logger):
         verbose=1,
         device="cpu",  # Force CPU usage
     )
-    logger.info("🚀 Starting PPO training...")
-    model_ppo.learn(total_timesteps=3_000)  # Reduced for testing
+    
+    # Determine training duration based on mode
+    if dev_mode:
+        total_timesteps = 5000
+        logger.info(f"🚀 Starting PPO training (DEV MODE: {total_timesteps:,} timesteps)...")
+    else:
+        total_timesteps = 100_000
+        logger.info(f"🚀 Starting PPO training (PRODUCTION: {total_timesteps:,} timesteps)...")
+    
+    model_ppo.learn(total_timesteps=total_timesteps)
     logger.info("✅ Training completed.")
 
     # Save model to organized directory structure
