@@ -13,3 +13,9 @@ RUN apt-get update && apt-get install -y git && \
     cp config/config-example.js config/config.js && \
     rm -rf /var/lib/apt/lists/*
 
+# Expose port 8000 for the Pokemon Showdown server
+EXPOSE 8000
+
+# Default command to start the server
+CMD ["node", "pokemon-showdown", "start", "--no-security"]
+
