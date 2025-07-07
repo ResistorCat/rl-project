@@ -3,12 +3,15 @@ Training command implementation.
 """
 
 import logging
-import time
 from poke_env.player import RandomPlayer
-from stable_baselines3 import PPO
+from stable_baselines3 import PPO, DQN
+from stable_baselines3.common.monitor import Monitor
 
 from environment.wrapper import PokeEnvSinglesWrapper
-from util import configure_poke_env_logging, RLModel, get_model_path
+from util.logging_config import configure_poke_env_logging
+from util.types import RLModel
+from util.output_utils import get_output_dir
+from util.plot_utils import plot_training_learning_curve
 
 
 def train_command(
@@ -53,32 +56,74 @@ def train_command(
             strict=False,
         )
         random_player = RandomPlayer()
-        train_env = env.get_training_env(opponent=random_player, enable_monitor=True)
+        train_env = env.get_wrapped_env(opponent=random_player)
+
+        # Set output dir
+        output_dir = get_output_dir(task_type="train", model_type=model_type)
+        model_path = output_dir / f"{model_type.value}_model.zip"
+        monitor_path = output_dir / f"{model_type.value}_monitor.csv"
+
+        # Monitor training
+        train_env = Monitor(
+            train_env,
+            filename=str(monitor_path),
+            allow_early_resets=True,
+            override_existing=True,
+        )
 
         # Configure PokeEnv logging to reduce noise
         configure_poke_env_logging()
         logger.info("🔇 Configured PokeEnv logging to reduce verbosity")
 
-        # Log dev mode status
+        # Determine training duration based on mode
         if dev_mode:
             logger.info("🛠️ Running in DEVELOPMENT mode (faster training for testing)")
+            total_timesteps = 5000
         else:
             logger.info("🏭 Running in PRODUCTION mode (full training)")
+            total_timesteps = 100_000
 
         logger.info(f"🚀 Training model: {model_type.value}")
 
-        model_path = None
+        model = None
         if model_type == RLModel.PPO:
-            model_path = _train_ppo_model(train_env, logger, dev_mode=dev_mode)
+            model = PPO(
+                "MlpPolicy",
+                train_env,
+                verbose=1,
+                device="cpu",  # Force CPU usage
+            )
         elif model_type == RLModel.DQN:
-            # Placeholder for DQN training logic
-            logger.warning("⚠️ DQN training is not implemented yet.")
+            model = DQN(
+                "MlpPolicy",
+                train_env,
+                verbose=1,
+            )
         else:
             logger.error(f"❌ Unknown model type: {model_type}")
             raise ValueError(f"Unsupported model type: {model_type}")
 
-        if model_path:
-            logger.info(f"✅ Training session completed! Model saved to: {model_path}")
+        if model:
+            # Train the model
+            model.learn(total_timesteps=total_timesteps)
+            logger.info("✅ Training session completed!")
+
+            # Save model
+            model.save(model_path)
+            logger.info(f"💾 Model saved to: {model_path}")
+
+            # Generate learning curve plot
+            try:
+                logger.info("📊 Generating learning curve plot...")
+                save_path = output_dir / f"{model_type.value}_learning_curve.png"
+                plot_training_learning_curve(
+                    model_type=model_type,
+                    monitor_path=monitor_path,
+                    save_path=save_path,
+                )
+                logger.info(f"📈 Learning curve plot saved to: {save_path}")
+            except Exception as e:
+                logger.warning(f"⚠️ Failed to generate learning curve plot: {e}")
 
         # Close the environment
         train_env.close()
@@ -93,43 +138,3 @@ def train_command(
         # Clean up resources
         if cleanup_func and not no_docker:
             cleanup_func()
-
-
-def _train_ppo_model(train_env, logger, dev_mode: bool = False):
-    """
-    Train a PPO model.
-    
-    Args:
-        train_env: The training environment
-        logger: Logger instance
-        dev_mode: Whether to run in development mode (shorter training)
-    """
-    logger.info("🖥️ Using CPU device for training")
-
-    # Wait a moment for environment to stabilize
-    time.sleep(2)
-
-    model_ppo = PPO(
-        "MlpPolicy",
-        train_env,
-        verbose=1,
-        device="cpu",  # Force CPU usage
-    )
-    
-    # Determine training duration based on mode
-    if dev_mode:
-        total_timesteps = 5000
-        logger.info(f"🚀 Starting PPO training (DEV MODE: {total_timesteps:,} timesteps)...")
-    else:
-        total_timesteps = 100_000
-        logger.info(f"🚀 Starting PPO training (PRODUCTION: {total_timesteps:,} timesteps)...")
-    
-    model_ppo.learn(total_timesteps=total_timesteps)
-    logger.info("✅ Training completed.")
-
-    # Save model to organized directory structure
-    model_path = get_model_path(RLModel.PPO, include_timestamp=True)
-    model_ppo.save(str(model_path))
-    logger.info(f"💾 Model saved to: {model_path}")
-
-    return model_path
