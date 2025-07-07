@@ -8,7 +8,7 @@ import docker
 def check_docker_availability():
     """
     Check if Docker is available and running.
-    
+
     Returns:
         bool: True if Docker is available and running, False otherwise.
     """

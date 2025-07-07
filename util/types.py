@@ -8,4 +8,3 @@ from enum import Enum
 class RLModel(str, Enum):
     PPO = "ppo"
     DQN = "dqn"
-    RANDOM = "random"
