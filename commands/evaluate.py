@@ -4,14 +4,14 @@ Evaluation command implementation.
 
 import logging
 import numpy as np
-from poke_env.player import RandomPlayer
+from poke_env.player import RandomPlayer, MaxBasePowerPlayer
 from stable_baselines3 import PPO, DQN
 
-from environment.wrapper import PokeEnvSinglesWrapper
-from util.types import RLModel
-from util.evaluation_utils import EvaluationResults
-from util.logging_config import configure_poke_env_logging
-from util.output_utils import get_output_dir
+from environment.wrapper import PokeEnvSinglesWrapper, DQNPlayer
+from utils.types import RLModel, RLPlayer
+from utils.evaluation_utils import EvaluationResults
+from utils.logging_config import configure_poke_env_logging
+from utils.output_utils import get_output_dir
 
 
 def evaluate_command(
@@ -19,6 +19,7 @@ def evaluate_command(
     initialize_func=None,
     cleanup_func=None,
     no_docker=False,
+    opponents: list[RLPlayer] = [RLPlayer.RANDOM],
 ):
     """
     Evaluate the model and generate training progress plots.
@@ -54,71 +55,109 @@ def evaluate_command(
             return
         logger.info("✅ Model loaded successfully")
 
-        # Create evaluation environment
-        logger.info("🎮 Setting up evaluation environment...")
-        env = PokeEnvSinglesWrapper(
-            battle_format="gen9randombattle",
-            log_level=30,  # WARNING level to reduce verbosity
-            start_challenging=True,
-            strict=False,
-        )
-        random_player = RandomPlayer()
-        eval_env = env.get_wrapped_env(opponent=random_player)
+        results = EvaluationResults(model_type=model_type)
 
         # Configure PokeEnv logging to reduce noise
         configure_poke_env_logging()
         logger.info("🔇 Configured PokeEnv logging to reduce verbosity")
-        # Run evaluation battles
-        num_battles = 10
-        logger.info(
-            f"⚔️ Running {num_battles} evaluation battles against RandomPlayer..."
-        )
-
-        results = EvaluationResults(model_type=model_type)
-        battle_rewards = []
-        battle_results = []  # True for win, False for loss
-        battle_steps = []  # Track number of steps per battle
-
-        for battle_num in range(1, num_battles + 1):
-            obs, info = eval_env.reset()
-            done = False
-            step_count = 0
-            total_reward = 0
-
-            while not done:
-                # Use the trained model to predict actions
-                action, _states = trained_model.predict(obs, deterministic=True)
-                # Handle different action types (numpy array or scalar)
-                if hasattr(action, "item"):
-                    action_value = np.int64(action.item())
-                else:
-                    action_value = np.int64(action)
-                obs, reward, terminated, truncated, info = eval_env.step(action_value)
-                done = terminated or truncated
-                step_count += 1
-                total_reward += float(reward)
-
-                # Prevent infinite loops
-                if step_count > 1000:
-                    logger.warning(
-                        f"⚠️ Battle {battle_num} exceeded 1000 steps, ending battle"
+        for opponent in opponents:
+            if opponent == RLPlayer.RANDOM:
+                player = RandomPlayer(log_level=30)
+            elif opponent == RLPlayer.MAX:
+                player = MaxBasePowerPlayer(log_level=30)
+            elif opponent == RLPlayer.DQN:
+                # Check if DQN is trained
+                opponent_model_path = (
+                    get_output_dir(task_type="train", model_type=RLModel.DQN)
+                    / "dqn_model.zip"
+                )
+                if not opponent_model_path.exists():
+                    logger.error(
+                        "❌ DQN model not found. Please train the DQN model first."
                     )
-                    break
+                    continue
+                player = DQNPlayer(
+                    model=DQN.load(opponent_model_path, device="cpu")
+                )
+            # elif opponent == RLPlayer.PPO:
+            #     # Check if PPO is trained
+            #     opponent_model_path = (
+            #         get_output_dir(task_type="train", model_type=RLModel.PPO)
+            #         / "ppo_model.zip"
+            #     )
+            #     if not opponent_model_path.exists():
+            #         logger.error(
+            #             "❌ PPO model not found. Please train the PPO model first."
+            #         )
+            #         continue
+            #     player = BaselinePlayer(
+            #         model=PPO.load(opponent_model_path, device="cpu")
+            #     )
+            else:
+                logger.error(f"❌ Unsupported opponent: {opponent}")
+                continue
 
-            # Store battle results
-            battle_rewards.append(total_reward)
-            battle_steps.append(step_count)
-            battle_won = total_reward > 0
-            battle_results.append(battle_won)
+            # Create evaluation environment
+            logger.info("🎮 Setting up evaluation environment...")
+            env = PokeEnvSinglesWrapper(
+                battle_format="gen9randombattle",
+                log_level=30,  # WARNING level to reduce verbosity
+                start_challenging=True,
+                strict=False,
+            )
+            eval_env = env.get_wrapped_env(opponent=player)
+            
+            # Run evaluation battles
+            num_battles = 100
+            logger.info(
+                f"⚔️ Running {num_battles} evaluation battles against {opponent.value}..."
+            )
+            battle_rewards = []
+            battle_results = []  # True for win, False for loss
+            battle_steps = []  # Track number of steps per battle
 
-        # Calculate overall statistics
-        results.add_result(
-            opponent_name="RandomPlayer",
-            battles_won=sum(battle_results),
-            total_battles=num_battles,
-            mean_reward=np.mean(battle_rewards, dtype=np.float64),
-            std_reward=np.std(battle_rewards, dtype=np.float64),
-        )
+            for battle_num in range(1, num_battles + 1):
+                obs, info = eval_env.reset()
+                done = False
+                step_count = 0
+                total_reward = 0
+
+                while not done:
+                    # Use the trained model to predict actions
+                    action, _states = trained_model.predict(obs, deterministic=True)
+                    # Handle different action types (numpy array or scalar)
+                    if hasattr(action, "item"):
+                        action_value = np.int64(action.item())
+                    else:
+                        action_value = np.int64(action)
+                    obs, reward, terminated, truncated, info = eval_env.step(
+                        action_value
+                    )
+                    done = terminated or truncated
+                    step_count += 1
+                    total_reward += float(reward)
+
+                    # Prevent infinite loops
+                    if step_count > 1000:
+                        logger.warning(
+                            f"⚠️ Battle {battle_num} exceeded 1000 steps, ending battle"
+                        )
+                        break
+
+                # Store battle results
+                battle_rewards.append(total_reward)
+                battle_steps.append(step_count)
+                battle_won = total_reward > 0
+                battle_results.append(battle_won)
+
+            # Calculate overall statistics
+            results.add_result(
+                opponent_name=opponent.value,
+                battles_won=sum(battle_results),
+                total_battles=num_battles,
+                mean_reward=np.mean(battle_rewards, dtype=np.float64),
+                std_reward=np.std(battle_rewards, dtype=np.float64),
+            )
 
         # Print and save
         results.print()

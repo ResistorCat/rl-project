@@ -2,9 +2,9 @@ import typer
 import logging
 from environment.server import PokemonShowdownServer
 from commands import train_command, evaluate_command
-from util.types import RLModel
-from util.logging_config import setup_logging, configure_poke_env_logging
-from util.docker_utils import check_docker_availability
+from utils.types import RLModel, RLPlayer
+from utils.logging_config import setup_logging, configure_poke_env_logging
+from utils.docker_utils import check_docker_availability
 
 
 # Global server instance
@@ -143,10 +143,10 @@ def train(
 @app.command()
 def evaluate(
     model: RLModel = RLModel.PPO,
-    model_path: str = typer.Option(
-        None,
-        "--model-path",
-        help="Path to specific model file to evaluate (if not provided, uses latest model)",
+    opponents: list[RLPlayer] = typer.Option(
+        [RLPlayer.RANDOM, RLPlayer.MAX, RLPlayer.DQN],
+        "--opponents",
+        help="List of opponents to evaluate against (default: all available players)",
     ),
 ):
     """
@@ -158,6 +158,7 @@ def evaluate(
         initialize_func=initialize,
         cleanup_func=cleanup,
         no_docker=NO_DOCKER,
+        opponents=opponents,
     )
 
 

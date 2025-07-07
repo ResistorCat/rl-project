@@ -8,10 +8,10 @@ from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.monitor import Monitor
 
 from environment.wrapper import PokeEnvSinglesWrapper
-from util.logging_config import configure_poke_env_logging
-from util.types import RLModel
-from util.output_utils import get_output_dir
-from util.plot_utils import plot_training_learning_curve
+from utils.logging_config import configure_poke_env_logging
+from utils.types import RLModel
+from utils.output_utils import get_output_dir
+from utils.plot_utils import plot_training_learning_curve
 
 
 def train_command(
