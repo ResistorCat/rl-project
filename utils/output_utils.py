@@ -3,7 +3,7 @@ Model management utilities for the Pokémon RL project.
 """
 
 from pathlib import Path
-from util.types import RLModel
+from utils.types import RLModel
 
 
 def get_output_dir(

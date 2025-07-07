@@ -3,8 +3,8 @@ Table utilities for evaluation results.
 """
 
 import pandas as pd
-from util.types import RLModel
-from util.output_utils import get_output_dir
+from utils.types import RLModel
+from utils.output_utils import get_output_dir
 
 
 class EvaluationResults:

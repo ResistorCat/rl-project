@@ -5,7 +5,7 @@ Plotting utilities for training analysis.
 import os
 from pathlib import Path
 import matplotlib.pyplot as plt
-from util.types import RLModel
+from utils.types import RLModel
 import pandas as pd
 
 
