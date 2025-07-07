@@ -1,0 +1,4 @@
+poke-env @https://github.com/cameronangliss/poke-env.git
+ray[rllib]==2.47.0
+torch
+GPUtil

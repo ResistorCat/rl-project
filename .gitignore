@@ -186,7 +186,15 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-# Cursor
+# Trained models (can be large files)
+models/
+*.model
+*.pkl
+*.h5
+
+# Evaluation outputs and plots
+outputs/
+
 #  Cursor is an AI-powered code editor. `.cursorignore` specifies files/directories to
 #  exclude from AI features like autocomplete and code analysis. Recommended for sensitive data
 #  refer to https://docs.cursor.com/context/ignore-files

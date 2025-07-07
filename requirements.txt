@@ -1,0 +1,8 @@
+typer
+docker
+poke-env
+stable-baselines3
+colorlog
+matplotlib
+pandas
+numpy
