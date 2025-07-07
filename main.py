@@ -1,13 +1,10 @@
 import typer
 import logging
 from environment.server import PokemonShowdownServer
-from util import (
-    setup_logging,
-    RLModel,
-    configure_poke_env_logging,
-    check_docker_availability,
-)
 from commands import train_command, evaluate_command
+from util.types import RLModel
+from util.logging_config import setup_logging, configure_poke_env_logging
+from util.docker_utils import check_docker_availability
 
 
 # Global server instance
@@ -120,7 +117,7 @@ def cleanup():
 
 @app.command()
 def train(
-    model_type: RLModel = RLModel.PPO, 
+    model: RLModel = RLModel.PPO,
     restart_server: bool = False,
     dev: bool = typer.Option(
         False,
@@ -133,7 +130,7 @@ def train(
     """
     # Delegate to the train command implementation
     train_command(
-        model_type=model_type,
+        model_type=model,
         restart_server=restart_server,
         dev_mode=dev,
         initialize_func=initialize,
@@ -144,13 +141,20 @@ def train(
 
 
 @app.command()
-def evaluate(model: RLModel = RLModel.PPO):
+def evaluate(
+    model: RLModel = RLModel.PPO,
+    model_path: str = typer.Option(
+        None,
+        "--model-path",
+        help="Path to specific model file to evaluate (if not provided, uses latest model)",
+    ),
+):
     """
-    Evaluate the model.
+    Evaluate the model and generate training progress plots.
     """
     # Delegate to the evaluate command implementation
     evaluate_command(
-        model=model,
+        model_type=model,
         initialize_func=initialize,
         cleanup_func=cleanup,
         no_docker=NO_DOCKER,
