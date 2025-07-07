@@ -1,7 +1,6 @@
 import numpy as np
 from gymnasium.spaces import Box
 from poke_env.player import SinglesEnv, SingleAgentWrapper
-from stable_baselines3.common.monitor import Monitor
 
 
 class PokeEnvSinglesWrapper(SinglesEnv):
@@ -63,32 +62,16 @@ class PokeEnvSinglesWrapper(SinglesEnv):
             ]
         )
         return np.float32(final_vector)
-    
-    def get_training_env(self, opponent, enable_monitor=False):
+
+    def get_wrapped_env(self, opponent):
         """
-        Get the training environment with a specific opponent and optional monitoring.
-        
+        Get the wrapped environment with a specific opponent.
+
         Args:
-            opponent: The opponent to train against
-            enable_monitor: Whether to enable monitoring for training metrics
-        
+            opponent: The opponent to battle against
+
         Returns:
-            SingleAgentWrapper or Monitor wrapped environment
+            SingleAgentWrapper environment
         """
-        env = SingleAgentWrapper(self, opponent)
 
-        if enable_monitor:
-            from util.model_utils import get_monitor_file_path
-            
-            # Get monitor file path using utility function
-            monitor_file = str(get_monitor_file_path())
-
-            # Wrap with Monitor to track training metrics
-            env = Monitor(
-                env,
-                filename=monitor_file,
-                allow_early_resets=True,
-                override_existing=True,
-            )
-
-        return env
+        return SingleAgentWrapper(self, opponent)
