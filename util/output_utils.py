@@ -20,5 +20,5 @@ def get_output_dir(
         output_dir /= task_type
     if model_type and task_type:
         output_dir /= model_type.value.lower()
-    output_dir.mkdir(exist_ok=True)
+    output_dir.mkdir(exist_ok=True, parents=True)
     return output_dir
