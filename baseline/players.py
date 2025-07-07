@@ -2,12 +2,11 @@ import random
 from stable_baselines3 import DQN
 from poke_env.player import Player
 from poke_env.environment import Battle
-from poke_env.player import DefaultBattleOrder
+from poke_env.player import DefaultBattleOrder, BattleOrder
 import torch
 import numpy as np
 
-from utils import simple_embed_battle, simple_action_to_order
-from libs.battle_order import BattleOrder
+from utils.model import simple_embed_battle, simple_action_to_order
 
 """
  Acción (0, ..., 5)  significa Switch(index)
@@ -49,7 +48,7 @@ class BaselinePlayer(Player):
         # Buscar la mejor acción válida
         for action in sorted_actions:
           try:
-            order = simple_action_to_order(action, battle)
+            order = self.action_to_order(action, battle)
             if not isinstance(order, DefaultBattleOrder):
               print(f">>>> Acción válida seleccionada: {action}")
               return order
@@ -110,6 +109,9 @@ class BaselinePlayer(Player):
             dynamax=dynamax,
             terastallize=terastallize,
         )
+    
+    def action_to_order(self, action, battle, fake = False, strict = True):
+      return simple_action_to_order(action, battle, fake, strict)
 
 
 class SimpleRandomPlayer(Player):

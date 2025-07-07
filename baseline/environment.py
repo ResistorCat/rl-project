@@ -3,7 +3,7 @@ from gymnasium.spaces import Box, Discrete
 from poke_env.player import SinglesEnv, BattleOrder
 from poke_env.environment import Battle
 
-from utils import simple_embed_battle, simple_action_to_order, simple_order_to_action
+from utils.model import simple_embed_battle, simple_action_to_order, simple_order_to_action
 
 class BaselineSinglesEnv(SinglesEnv):
     def __init__(self, **kwargs):

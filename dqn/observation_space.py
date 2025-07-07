@@ -1,20 +1,37 @@
 import numpy as np
 
 def get_bounds_moves():
+    move_low  = np.array([-1.0,  0.0, -1.0, 0.0, 0.0])
+    move_high = np.array([ 4.0,  1.0,  4.0, 1.0, 1.0])
+    # base_power, accuracy, damage_multiplier, current_pp > 0, disabled
+    # Que pasa si el movimiento no tiene PP?
+
+    moves_low = np.tile(move_low, 4)
+    moves_highs = np.tile(move_high, 4)
+
     return (
-        np.full(4,-1.0),  # low  base power
-        np.full(4, 2.0),  # high base power
-        np.full(4, 0.0),  # low  damage multiplier
-        np.full(4, 4.0)   # high damage multiplier
+        moves_low,
+        moves_highs
         )
 
-def get_bounds_hp():
+def get_bounds_switches():
     return (
-        np.array([0.0, 0.0]),
-        np.array([1.0, 1.0])
+        np.zeros(6 * 3, dtype=np.float32),
+         np.ones(6 * 3, dtype=np.float32)
         )
 
-def get_bounds_status(one_hot: bool = False):
+def get_bounds_active_pokemon():
+    low = np.array(
+        [0.0] + [0.0]*5 + [0.0, 0.0] + [0.0] + [0.0]*5,
+        dtype=np.float32
+    )
+    high = np.array(
+        [1.0] + [1.0]*5 + [1.0, 1.0] + [1.0] + [1.0]*5,
+        dtype=np.float32
+    )
+    return low, high
+
+def get_bounds_status(one_hot: bool = True):
     if one_hot:
         return (
             np.zeros(14, dtype=np.float32),
@@ -48,7 +65,7 @@ def get_bounds_fainted():
     )
 
 def build_observation_bounds(
-    include_hp=True,
+    include_active_pokemon=True,
     include_status=True,
     include_types=True,
     include_boosts=True,
@@ -58,14 +75,18 @@ def build_observation_bounds(
     lows, highs = [], []
 
     # Moves (always included)
-    low1, high1, low2, high2 = get_bounds_moves()
-    lows.append(low1)
-    highs.append(high1)
-    lows.append(low2)
-    highs.append(high2)
+    low, high = get_bounds_moves()
+    lows.append(low)
+    highs.append(high)
 
-    if include_hp:
-        low, high = get_bounds_hp()
+    # Switches (always included)
+    low, high = get_bounds_switches()
+    lows.append(low)
+    highs.append(high)
+
+
+    if include_active_pokemon:
+        low, high = get_bounds_active_pokemon()
         lows.append(low)
         highs.append(high)
 
@@ -93,7 +114,7 @@ def build_observation_bounds(
 
 
 def get_embedding_dimension(
-    include_hp=True,
+    include_active_pokemon=True,
     include_status=True,
     include_types=True,
     include_boosts=True,
@@ -101,7 +122,7 @@ def get_embedding_dimension(
     status_one_hot=False
 ) -> int:
     low, _ = build_observation_bounds(
-        include_hp=include_hp,
+        include_active_pokemon=include_active_pokemon,
         include_status=include_status,
         include_types=include_types,
         include_boosts=include_boosts,

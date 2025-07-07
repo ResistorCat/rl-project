@@ -1,11 +1,12 @@
 import numpy as np
 from gymnasium.spaces import Box, Discrete
-from poke_env.player import SinglesEnv, BattleOrder
+from poke_env.player import SinglesEnv, BattleOrder, DefaultBattleOrder
 from poke_env.environment import Battle
+from collections import defaultdict
 
 from dqn.observation_space import build_observation_bounds
 from dqn.embedding import enhanced_embed_battle
-from utils.model import simple_action_to_order, simple_order_to_action
+from utils.model import simple_order_to_action, enhanced_action_to_order
 
 class FirstDQNSinglesEnv(SinglesEnv):
     def __init__(self, **kwargs):
@@ -28,19 +29,36 @@ class FirstDQNSinglesEnv(SinglesEnv):
             agent: Discrete(act_size) for agent in self.possible_agents
         }
 
+        self._last_invalid_action = defaultdict(bool)
+        self.action_to_order = self._wrapped_action_to_order
+
     def calc_reward(self, battle) -> float:
-        return self.reward_computing_helper(
-            battle, fainted_value=2.0, hp_value=1.0, victory_value=30.0
+        base_reward = self.reward_computing_helper(
+            battle,
+            fainted_value=2.0,
+            hp_value=1.0,
+            victory_value=30.0
         )
+
+        penalty = 0.0
+        if self._last_invalid_action.get(battle, False):
+            penalty = -10.0
+            print(f"[Reward] Penalización aplicada por acción inválida en turno {battle.turn}")
+            self._last_invalid_action[battle] = False  # Reiniciar para siguiente turno
+
+        return base_reward + penalty
 
     def embed_battle(self, battle):
         return enhanced_embed_battle(battle, status_one_hot=True)
     
-    @staticmethod
-    def action_to_order(
-        action: np.int64, battle: Battle, fake: bool = False, strict: bool = True
-    ) -> BattleOrder:
-        return simple_action_to_order(action, battle, fake, strict)
+    def _wrapped_action_to_order(self, action: int, battle, fake: bool = False, strict: bool = True) -> BattleOrder:
+        try:
+            return enhanced_action_to_order(action, battle, fake, strict)
+        except AssertionError as e:
+            print(f"[wrapped_action_to_order] Acción inválida: {e}")
+            self._last_invalid_action[battle] = True
+            return DefaultBattleOrder()
+  
     
     @staticmethod
     def order_to_action(

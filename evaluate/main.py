@@ -11,10 +11,10 @@ COMPARE_WITH_RANDOM_PLAYER        = True
 COMPARE_WITH_MAX_PLAYER           = False
 COMPARE_WITH_HEURISTICS_PLAYER    = False
 COMPARE_WITH_BASELINE_DQN_PLAYER  = True
-COMPARE_WITH_OUR_FIRST_DQN_PLAYER = False
+COMPARE_WITH_OUR_FIRST_DQN_PLAYER = True
 COMPARE_WITH_OUR_PPO_PLAYER       = False
 
-NUM_CHALLENGES = 50
+NUM_CHALLENGES = 10
 ##########################################
 
 
@@ -71,7 +71,7 @@ async def main(num_challenges: int = 5):
     results = await cross_evaluate(players, n_challenges=num_challenges)
     print("Resultados:", results)
 
-    print(f"{dqn_player.times_random_choice} de {dqn_player.times_made_a_choice} acciones fueron al azar. {dqn_player.times_random_choice / dqn_player.times_made_a_choice:.2}")
+    # print(f"{dqn_player.times_random_choice} de {dqn_player.times_made_a_choice} acciones fueron al azar. {dqn_player.times_random_choice / dqn_player.times_made_a_choice:.2}")
 
 
 if __name__ == "__main__":

@@ -39,8 +39,8 @@ def train(
   env = Monitor(env, filename=csv_path)
 
   model = DQN(
-    "MlpPolicy",
-    env,
+      "MlpPolicy",
+      env,
       verbose=verbose,
       learning_rate=learning_rate,
       buffer_size=buffer_size,
@@ -56,7 +56,8 @@ def train(
       exploration_final_eps=exploration_final_eps,
       max_grad_norm=max_grad_norm,
       policy_kwargs=policy_kwargs,
-    device=device
+      device=device,
+      
   )
 
   model.learn(total_timesteps=total_timesteps)

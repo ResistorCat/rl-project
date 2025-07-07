@@ -1,7 +1,7 @@
 import numpy as np
-from poke_env.player import DefaultBattleOrder, ForfeitBattleOrder, Player
+from poke_env.player import DefaultBattleOrder, ForfeitBattleOrder, Player, BattleOrder
 from poke_env.environment import Pokemon, Battle, Move
-from libs.battle_order import BattleOrder
+from tabulate import tabulate
 
 def simple_embed_battle(battle: Battle):
         # -1 indicates that the move does not have a base power
@@ -38,32 +38,29 @@ def simple_embed_battle(battle: Battle):
 def simple_action_to_order(
         action: np.int64, battle: Battle, fake: bool = False, strict: bool = True
     ) -> BattleOrder:
-        """
-        Returns the BattleOrder relative to the given action.
-
-        The action mapping is as follows:
-        action = -2: default
-        action = -1: forfeit
-        0 <= action <= 5: switch
-        6 <= action <= 9: move
-
-        >>> Quitamos mega, movimiento Z, dynamax y teracristal <<<
-        10 <= action <= 13: move and mega evolve
-        14 <= action <= 17: move and z-move
-        18 <= action <= 21: move and dynamax
-        22 <= action <= 25: move and terastallize
-        """
-        print(f">>>>>> Acción a convertir es {action} <<<<<<")
         try:
+            print("moves disponibles ->", battle.available_moves)
+            print("switches disponibles ->", battle.available_switches)
             if action == -2:
                 return DefaultBattleOrder()
             elif action == -1:
                 return ForfeitBattleOrder()
             elif action < 6:
-                print(f">>> Acciones disponiles para switch {list(battle.team.values())}")
-                order = Player.create_order(list(battle.team.values())[action])
                 if not fake:
                     assert not battle.trapped, "invalid action"
+
+                # Forma segura de elegir el cambio válido
+                switch_options = battle.available_switches
+
+                if action >= len(switch_options):
+                    print(f"[Switch inválido: acción {action} no disponible]")
+                    return DefaultBattleOrder()
+                if "inior" in switch_options[action].species:
+                    print("orden:", BattleOrder(switch_options[action]))
+                    print("pokemon:", switch_options[action])
+                order = BattleOrder(switch_options[action])
+
+                if not fake:
                     assert isinstance(order.order, Pokemon)
                     assert order.order.base_species in [
                         p.base_species for p in battle.available_switches
@@ -183,3 +180,109 @@ def simple_order_to_action(
                 return np.int64(-2)
             else:
                 raise e
+
+
+def enhanced_action_to_order(
+    action: np.int64, battle: Battle, fake: bool = False, strict: bool = True
+  ) -> BattleOrder:
+    # switches = battle.available_switches
+    # moves    = battle.available_moves
+
+    assert battle.active_pokemon is not None, f"invalid action: no active pokemon in battle"
+
+    if battle.reviving:
+        # Revivir al primero
+        candidates = [p for p in battle.team.values() if p.fainted]
+        return BattleOrder(candidates[0])
+
+    moves    = [move for move in battle.active_pokemon.moves.values()]
+    switches = [p for p in battle.team.values()]
+    valid_mask = get_valid_action_mask(battle, moves, switches)
+
+    print_tabulate(battle.active_pokemon.moves, battle.team)
+    if battle.active_pokemon.must_recharge:
+        assert len(battle.available_moves) > 0, "invalid action: no available move"
+        return BattleOrder(battle.available_moves[0])
+    
+    if len(battle.available_moves) == 1 and battle.available_moves[0].id == "struggle":
+        return BattleOrder(battle.available_moves[0])
+
+    try:
+        if action == -2:
+            return DefaultBattleOrder()
+        elif action == -1:
+            return ForfeitBattleOrder()
+
+        if 0 <= action < len(valid_mask) and valid_mask[action]:
+            if action < 6:
+                # print(f"Switch {action} - De {len(switches)} switches disponibles")
+                # for (i, p) in enumerate(switches):
+                    # print(f"{i}: {p.species}, fainted={p.fainted}, active={p.active}")
+                if not fake:
+                    assert not battle.trapped, "invalid action: can't switch - trapped"
+                target = switches[action]
+                assert not target.fainted, "invalid action: can't switch to fainted Pokémon"
+                assert not target.active, "invalid action: can't switch to active Pokémon"
+                if "minior" in target.species:
+                    target = [poke for poke in battle.available_switches if "minior" in poke.species][0]
+                return BattleOrder(target)
+            else:
+                # Aqui, por si necesitamos agregar validaciones de move
+                return BattleOrder(moves[action - 6])
+        else:
+            # FALLBACK
+            if action < 6:
+                if not fake:
+                    assert len(switches) > 0, f"invalid action: no switches -> {switches}"
+            else:
+                if not fake:
+                    assert len(moves) > 0, f"invalid action: no moves -> {moves}"
+                    assert not battle.force_switch, "invalid action: forced to switch"
+                    assert battle.active_pokemon is not None, "invalid action: no active (my) pokemon in battle "
+            return (
+                BattleOrder(switches[0]) if action < 6 and switches else
+                BattleOrder(moves[0]) if moves else
+                DefaultBattleOrder()
+            )
+    except AssertionError as e:
+        print(e)
+        if not strict and "invalid action" in str(e):
+            if action < 6:
+                # intento atacar
+                moves = np.argmax(valid_mask[6:])
+                action = int(np.argmax(moves))
+                return BattleOrder(moves[action])
+            return DefaultBattleOrder()
+        else:
+            raise e
+
+
+def enhanced_order_to_action(
+    action: np.int64, battle: Battle, fake: bool = False, strict: bool = True
+  ) -> BattleOrder:
+    pass
+
+
+def get_valid_action_mask(battle: Battle, moves: list[Move], switches: list[Pokemon]) -> np.ndarray:
+
+    mask = np.zeros(10, dtype=bool)
+
+    for i, poke in enumerate(switches[:6]):
+        if not poke.fainted and not poke.active:
+            mask[i] = not battle.trapped
+    
+    for i, move in enumerate(moves[:4]):
+        if move.current_pp > 0:
+            mask[6 + i] = not battle.force_switch  # No se puede atacar si debe cambiar
+
+    
+    return mask
+
+
+def print_tabulate(moves: dict = None, switches: dict = None):
+    if moves is not None:
+        rows_moves = [(key, str(value)) for key, value in moves.items()]
+        print(tabulate(rows_moves, headers=["Orden", "Movimiento"]))
+    if switches is not None:
+        rows_switches = [(key, str(value), value.species) for key, value in switches.items()]
+        print(tabulate(rows_switches, headers=["Orden", "Cambio"]))
