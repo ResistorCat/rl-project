@@ -20,6 +20,7 @@ def evaluate_command(
     cleanup_func=None,
     no_docker=False,
     opponents: list[RLPlayer] = [RLPlayer.RANDOM],
+    num_battles: int = 100,
 ):
     """
     Evaluate the model and generate training progress plots.
@@ -108,7 +109,6 @@ def evaluate_command(
             eval_env = env.get_wrapped_env(opponent=player)
             
             # Run evaluation battles
-            num_battles = 100
             logger.info(
                 f"⚔️ Running {num_battles} evaluation battles against {opponent.value}..."
             )

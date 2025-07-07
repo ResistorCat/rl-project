@@ -148,6 +148,11 @@ def evaluate(
         "--opponents",
         help="List of opponents to evaluate against (default: all available players)",
     ),
+    battles: int = typer.Option(
+        100,
+        "--battles",
+        help="Number of battles to run for evaluation (default: 100)",
+    ),
 ):
     """
     Evaluate the model and generate training progress plots.
@@ -159,6 +164,7 @@ def evaluate(
         cleanup_func=cleanup,
         no_docker=NO_DOCKER,
         opponents=opponents,
+        num_battles=battles
     )
 
 
