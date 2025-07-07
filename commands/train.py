@@ -3,13 +3,13 @@ Training command implementation.
 """
 
 import logging
-from poke_env.player import RandomPlayer
+from poke_env.player import RandomPlayer, MaxBasePowerPlayer
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.monitor import Monitor
 
-from environment.wrapper import PokeEnvSinglesWrapper
+from environment.wrapper import PokeEnvSinglesWrapper, DQNPlayer
 from utils.logging_config import configure_poke_env_logging
-from utils.types import RLModel
+from utils.types import RLModel, RLPlayer
 from utils.output_utils import get_output_dir
 from utils.plot_utils import plot_training_learning_curve
 
@@ -22,6 +22,7 @@ def train_command(
     cleanup_func=None,
     server=None,
     no_docker=False,
+    opponent: RLPlayer = RLPlayer.RANDOM
 ):
     """
     Train the model with the given name.
@@ -55,8 +56,33 @@ def train_command(
             start_challenging=True,
             strict=False,
         )
-        random_player = RandomPlayer()
-        train_env = env.get_wrapped_env(opponent=random_player)
+        if opponent == RLPlayer.RANDOM:
+            player = RandomPlayer(
+                battle_format="gen9randombattle",
+                log_level=30,  # WARNING level to reduce verbosity
+            )
+        elif opponent == RLPlayer.MAX:
+            player = MaxBasePowerPlayer(
+                battle_format="gen9randombattle",
+                log_level=30,  # WARNING level to reduce verbosity
+            )
+        elif opponent == RLPlayer.DQN:
+            # Check if DQN is trained
+            opponent_model_path = (
+                get_output_dir(task_type="train", model_type=RLModel.DQN)
+                / "dqn_model.zip"
+            )
+            if not opponent_model_path.exists():
+                raise FileNotFoundError(
+                    f"❌ DQN model not found at {opponent_model_path}. "
+                    "Please train the DQN model first."
+                )
+            player = DQNPlayer(
+                model=DQN.load(opponent_model_path, device="cpu")
+            )
+        else:
+            raise ValueError(f"Unsupported opponent type: {opponent}")
+        train_env = env.get_wrapped_env(opponent=player)
 
         # Set output dir
         output_dir = get_output_dir(task_type="train", model_type=model_type)

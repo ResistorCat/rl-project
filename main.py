@@ -124,6 +124,7 @@ def train(
         "--dev",
         help="Run in development mode (faster training with 5000 timesteps for testing)",
     ),
+    opponent: RLPlayer = RLPlayer.RANDOM,
 ):
     """
     Train the model with the given name.
@@ -137,6 +138,7 @@ def train(
         cleanup_func=cleanup,
         server=server,
         no_docker=NO_DOCKER,
+        opponent=opponent
     )
 
 
