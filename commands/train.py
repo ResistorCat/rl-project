@@ -123,7 +123,7 @@ def train_command(
             model = DQN(
                 "MlpPolicy",
                 train_env,
-                verbose=1,
+                verbose=0,
             )
         else:
             logger.error(f"❌ Unknown model type: {model_type}")
@@ -131,8 +131,12 @@ def train_command(
 
         if model:
             # Train the model
-            model.learn(total_timesteps=total_timesteps)
-            logger.info("✅ Training session completed!")
+            time_start = time.time()
+            logger.info(f"⏳ Starting training for {total_timesteps} timesteps...")
+            model.learn(total_timesteps=total_timesteps, progress_bar=True)
+            time_end = time.time()
+            elapsed_time = time_end - time_start
+            logger.info(f"⏱️ Training completed in {elapsed_time:.2f} seconds")
 
             # Save model
             model.save(model_path)
