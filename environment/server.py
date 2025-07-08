@@ -129,7 +129,7 @@ class PokemonShowdownServer:
             )
             
             # Also try to find by name pattern
-            named_containers = self.client.containers.list(
+            named_containers: list[Container] = self.client.containers.list(
                 filters={"name": f"pokemon-showdown-{self.port}"}, all=True
             )
             
@@ -146,9 +146,6 @@ class PokemonShowdownServer:
                 try:
                     container_name = container.name if hasattr(container, 'name') else container.id[:12]
                     self.logger.info(f"Stopping container: {container_name}")
-                    
-                    if container.status == 'running':
-                        container.stop(timeout=10)
                     container.remove(force=True)
                     self.logger.info(f"Container {container_name} stopped and removed")
                 except Exception as e:
