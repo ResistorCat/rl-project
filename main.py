@@ -165,9 +165,9 @@ def evaluate(
         help="List of opponents to evaluate against (default: all available players)",
     ),
     battles: int = typer.Option(
-        100,
+        1000,
         "--battles",
-        help="Number of battles to run for evaluation (default: 100)",
+        help="Number of battles to run for evaluation (default: 1000)",
     ),
 ):
     """
