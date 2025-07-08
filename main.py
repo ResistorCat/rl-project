@@ -54,7 +54,7 @@ def initialize(no_docker: bool = False):
         return
 
     # Check Docker availability
-    logger.info("🐳 Checking Docker availability...")
+    logger.debug("🐳 Checking Docker availability...")
     if not check_docker_availability():
         logger.error("❌ Docker is not available or not running on this system")
         logger.info("To run without Docker, use the --no-docker flag")
@@ -80,11 +80,9 @@ def initialize(no_docker: bool = False):
     try:
         server = PokemonShowdownServer()
         if not server.is_running():
-            logger.info("🚀 Starting Pokémon Showdown server...")
             if not server.start():
                 logger.error("❌ Failed to start the server")
                 raise typer.Exit(code=1)
-            logger.info("✅ Server started successfully")
         else:
             logger.info("✅ Server is already running")
     except Exception as e:
