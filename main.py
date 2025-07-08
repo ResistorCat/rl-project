@@ -184,5 +184,34 @@ def evaluate(
     )
 
 
+@app.command()
+def clean(
+    output: bool = typer.Option(
+        True, "--output", help="Clean up output directories and files"
+    ),
+):
+    """
+    Clean up resources, particularly stop the server if it was started.
+    """
+    cleanup()
+    if output:
+        import shutil
+        from utils.output_utils import get_output_dir
+
+        logger = logging.getLogger("Cleanup")
+        output_dir = get_output_dir()
+        logger.info(f"🗑️ Cleaning up output directory: {output_dir}")
+
+        # Remove the output directory if it exists
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+            logger.info(f"✅ Output directory {output_dir} cleaned up")
+        else:
+            logger.info(
+                f"ℹ️ Output directory {output_dir} does not exist, nothing to clean"
+            )
+    typer.echo("✅ Cleanup completed successfully")
+
+
 if __name__ == "__main__":
     app()
