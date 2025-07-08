@@ -14,7 +14,6 @@ from utils.logging_config import configure_poke_env_logging
 from utils.output_utils import get_output_dir
 from tqdm.rich import trange
 
-
 def evaluate_command(
     model_type: RLModel = RLModel.PPO,
     initialize_func=None,

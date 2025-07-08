@@ -1,0 +1,7 @@
+Metric,Random,MaxBasePower,DQN (Random Train),DQN (Max Train)
+Total Battles,1000,1000,1000,1000
+Battles Won,957,691,639,664
+Win Rate (%),95.7%,69.1%,63.9%,66.4%
+Loss Rate (%),4.3%,30.9%,36.1%,33.6%
+Mean Reward,37.24,14.39,10.58,12.47
+Std Reward,15.37,32.97,34.51,34.03
