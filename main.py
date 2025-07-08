@@ -157,10 +157,15 @@ def train(
 @app.command()
 def evaluate(
     model: RLModel = RLModel.PPO,
+    name: str = typer.Option(
+        None,
+        "--name",
+        help="Name of the model to evaluate (default: None, uses model type)",
+    ),
     opponents: list[RLPlayer] = typer.Option(
-        [RLPlayer.RANDOM, RLPlayer.MAX, RLPlayer.DQN],
-        "--opponents",
-        help="List of opponents to evaluate against (default: all available players)",
+        [RLPlayer.RANDOM, RLPlayer.MAX],
+        "--against",
+        help="List of opponents to evaluate against",
     ),
     battles: int = typer.Option(
         1000,
@@ -178,7 +183,8 @@ def evaluate(
         cleanup_func=cleanup,
         no_docker=NO_DOCKER,
         opponents=opponents,
-        num_battles=battles
+        num_battles=battles,
+        name=name,
     )
 
 

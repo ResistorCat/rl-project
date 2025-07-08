@@ -60,11 +60,23 @@ def train_command(
                 battle_format="gen9randombattle",
                 log_level=30,  # WARNING level to reduce verbosity
             )
-        elif opponent == RLPlayer.DQN:
+        elif opponent == RLPlayer.DQN_RANDOM:
             # Check if DQN is trained
             opponent_model_path = (
                 get_output_dir(task_type="train", model_type=RLModel.DQN)
-                / "dqn_model.zip"
+                / "random_model.zip"
+            )
+            if not opponent_model_path.exists():
+                raise FileNotFoundError(
+                    f"❌ DQN model not found at {opponent_model_path}. "
+                    "Please train the DQN model first."
+                )
+            player = DQNPlayer(model=DQN.load(opponent_model_path, device="cpu"))
+        elif opponent == RLPlayer.DQN_MAX:
+            # Check if DQN is trained
+            opponent_model_path = (
+                get_output_dir(task_type="train", model_type=RLModel.DQN)
+                / "max_model.zip"
             )
             if not opponent_model_path.exists():
                 raise FileNotFoundError(
@@ -100,7 +112,7 @@ def train_command(
         else:
             logger.info("🏭 Running in PRODUCTION mode (full training)")
 
-        logger.info(f"🚀 Training model: {model_type.value}")
+        logger.info(f"🚀 Training model {model_type.value} with name {name}")
 
         model = None
         if model_type == RLModel.PPO:

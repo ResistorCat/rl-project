@@ -12,6 +12,7 @@ from utils.types import RLModel, RLPlayer
 from utils.evaluation_utils import EvaluationResults
 from utils.logging_config import configure_poke_env_logging
 from utils.output_utils import get_output_dir
+from tqdm.rich import trange
 
 
 def evaluate_command(
@@ -20,17 +21,11 @@ def evaluate_command(
     cleanup_func=None,
     no_docker=False,
     opponents: list[RLPlayer] = [RLPlayer.RANDOM],
-    num_battles: int = 100,
+    num_battles: int = 1000,
+    name: str | None = None,
 ):
     """
     Evaluate the model and generate training progress plots.
-
-    Args:
-        model: The type of model to evaluate
-        model_path: Specific path to the model file (if None, uses latest)
-        initialize_func: Function to initialize the environment
-        cleanup_func: Function to clean up resources
-        no_docker: Whether running in no-docker mode
     """
     logger = logging.getLogger("Evaluation")
 
@@ -40,10 +35,10 @@ def evaluate_command(
             initialize_func(no_docker=no_docker)
 
         # Load the latest trained model of the type specified
-        logger.info(f"🔄 Loading latest {model_type.value} model...")
+        logger.info(f"🔄 Loading model: {name} (Type: {model_type})")
         model_path = (
             get_output_dir(task_type="train", model_type=model_type)
-            / f"{model_type.value}_model.zip"
+            / f"{name if name else model_type.value}_model.zip"
         )
         if model_type == RLModel.PPO:
             trained_model = PPO.load(model_path, device="cpu")
@@ -56,7 +51,7 @@ def evaluate_command(
             return
         logger.info("✅ Model loaded successfully")
 
-        results = EvaluationResults(model_type=model_type)
+        results = EvaluationResults(model_type=model_type, name=name)
 
         # Configure PokeEnv logging to reduce noise
         configure_poke_env_logging()
@@ -64,13 +59,15 @@ def evaluate_command(
         for opponent in opponents:
             if opponent == RLPlayer.RANDOM:
                 player = RandomPlayer(log_level=30)
+                opponent_name = "Random"
             elif opponent == RLPlayer.MAX:
                 player = MaxBasePowerPlayer(log_level=30)
-            elif opponent == RLPlayer.DQN:
-                # Check if DQN is trained
+                opponent_name = "MaxBasePower"
+            elif opponent == RLPlayer.DQN_RANDOM:
+                # Load all DQN models trained
                 opponent_model_path = (
                     get_output_dir(task_type="train", model_type=RLModel.DQN)
-                    / "dqn_model.zip"
+                    / "random_model.zip"
                 )
                 if not opponent_model_path.exists():
                     logger.error(
@@ -80,20 +77,22 @@ def evaluate_command(
                 player = DQNPlayer(
                     model=DQN.load(opponent_model_path, device="cpu")
                 )
-            # elif opponent == RLPlayer.PPO:
-            #     # Check if PPO is trained
-            #     opponent_model_path = (
-            #         get_output_dir(task_type="train", model_type=RLModel.PPO)
-            #         / "ppo_model.zip"
-            #     )
-            #     if not opponent_model_path.exists():
-            #         logger.error(
-            #             "❌ PPO model not found. Please train the PPO model first."
-            #         )
-            #         continue
-            #     player = BaselinePlayer(
-            #         model=PPO.load(opponent_model_path, device="cpu")
-            #     )
+                opponent_name = "DQN (Random Train)"
+            elif opponent == RLPlayer.DQN_MAX:
+                # Load all DQN models trained
+                opponent_model_path = (
+                    get_output_dir(task_type="train", model_type=RLModel.DQN)
+                    / "max_model.zip"
+                )
+                if not opponent_model_path.exists():
+                    logger.error(
+                        "❌ DQN model not found. Please train the DQN model first."
+                    )
+                    continue
+                player = DQNPlayer(
+                    model=DQN.load(opponent_model_path, device="cpu")
+                )
+                opponent_name = "DQN (Max Train)"
             else:
                 logger.error(f"❌ Unsupported opponent: {opponent}")
                 continue
@@ -116,7 +115,7 @@ def evaluate_command(
             battle_results = []  # True for win, False for loss
             battle_steps = []  # Track number of steps per battle
 
-            for battle_num in range(1, num_battles + 1):
+            for battle_num in trange(1, num_battles + 1):
                 obs, info = eval_env.reset()
                 done = False
                 step_count = 0
@@ -152,7 +151,7 @@ def evaluate_command(
 
             # Calculate overall statistics
             results.add_result(
-                opponent_name=opponent.value,
+                opponent_name=opponent_name,
                 battles_won=sum(battle_results),
                 total_battles=num_battles,
                 mean_reward=np.mean(battle_rewards, dtype=np.float64),

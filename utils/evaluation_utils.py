@@ -12,10 +12,11 @@ class EvaluationResults:
     Class to handle evaluation results.
     """
 
-    def __init__(self, model_type: RLModel):
+    def __init__(self, model_type: RLModel, name: str | None = None):
         self.model_type = model_type
         self.output_dir = get_output_dir(task_type="evaluate", model_type=model_type)
         self.results: list[dict] = []
+        self.name = name
 
     def add_result(
         self,
@@ -51,8 +52,10 @@ class EvaluationResults:
         Save the DataFrame.
         """
         table = self._to_df()
-        file_path = self.output_dir / f"{self.model_type.value}_evaluation_results.csv"
+        file_path = self.output_dir / f"{self.name if self.name else self.model_type.value}_evaluation_results.csv"
+        tex_path = self.output_dir / f"{self.name if self.name else self.model_type.value}_evaluation_results.tex"
         table.to_csv(file_path, index=False)
+        table.to_latex(tex_path, index=False, float_format="%.2f")
         print(f"✅ Evaluation results saved to: {file_path}")
 
     def print(self):
