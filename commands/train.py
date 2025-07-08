@@ -3,6 +3,7 @@ Training command implementation.
 """
 
 import logging
+import time
 from poke_env.player import RandomPlayer, MaxBasePowerPlayer
 from stable_baselines3 import PPO, DQN
 from stable_baselines3.common.monitor import Monitor
@@ -22,19 +23,12 @@ def train_command(
     cleanup_func=None,
     server=None,
     no_docker=False,
-    opponent: RLPlayer = RLPlayer.RANDOM
+    opponent: RLPlayer = RLPlayer.RANDOM,
+    total_timesteps: int = 100_000,
+    name: str | None = None,
 ):
     """
     Train the model with the given name.
-
-    Args:
-        model_type: The type of model to train
-        restart_server: Whether to restart the server before training
-        dev_mode: Whether to run in development mode (shorter training)
-        initialize_func: Function to initialize the environment
-        cleanup_func: Function to clean up resources
-        server: Server instance for restart operations
-        no_docker: Whether running in no-docker mode
     """
     logger = logging.getLogger("Training")
 
@@ -77,17 +71,15 @@ def train_command(
                     f"❌ DQN model not found at {opponent_model_path}. "
                     "Please train the DQN model first."
                 )
-            player = DQNPlayer(
-                model=DQN.load(opponent_model_path, device="cpu")
-            )
+            player = DQNPlayer(model=DQN.load(opponent_model_path, device="cpu"))
         else:
             raise ValueError(f"Unsupported opponent type: {opponent}")
         train_env = env.get_wrapped_env(opponent=player)
 
         # Set output dir
         output_dir = get_output_dir(task_type="train", model_type=model_type)
-        model_path = output_dir / f"{model_type.value}_model.zip"
-        monitor_path = output_dir / f"{model_type.value}_monitor.csv"
+        model_path = output_dir / f"{name if name else model_type.value}_model.zip"
+        monitor_path = output_dir / f"{name if name else model_type.value}_monitor.csv"
 
         # Monitor training
         train_env = Monitor(
@@ -104,10 +96,9 @@ def train_command(
         # Determine training duration based on mode
         if dev_mode:
             logger.info("🛠️ Running in DEVELOPMENT mode (faster training for testing)")
-            total_timesteps = 5000
+            total_timesteps = 5_000
         else:
             logger.info("🏭 Running in PRODUCTION mode (full training)")
-            total_timesteps = 100_000
 
         logger.info(f"🚀 Training model: {model_type.value}")
 
@@ -116,7 +107,7 @@ def train_command(
             model = PPO(
                 "MlpPolicy",
                 train_env,
-                verbose=1,
+                verbose=0,
                 device="cpu",  # Force CPU usage
             )
         elif model_type == RLModel.DQN:
@@ -145,7 +136,7 @@ def train_command(
             # Generate learning curve plot
             try:
                 logger.info("📊 Generating learning curve plot...")
-                save_path = output_dir / f"{model_type.value}_learning_curve.png"
+                save_path = output_dir / f"{name if name else model_type.value}_learning_curve.png"
                 plot_training_learning_curve(
                     model_type=model_type,
                     monitor_path=monitor_path,
@@ -158,6 +149,7 @@ def train_command(
         # Close the environment
         train_env.close()
         env.close()
+        logger.info("✅ Training completed successfully")
 
     except KeyboardInterrupt:
         logger.warning("🛑 Training interrupted by user")

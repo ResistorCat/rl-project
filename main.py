@@ -124,7 +124,19 @@ def train(
         "--dev",
         help="Run in development mode (faster training with 5000 timesteps for testing)",
     ),
-    opponent: RLPlayer = RLPlayer.RANDOM,
+    opponent: RLPlayer = typer.Option(
+        RLPlayer.RANDOM,
+        "--opponent",
+        help="Opponent player type for training (default: RANDOM)",
+    ),
+    timesteps: int = typer.Option(
+        100_000, "--timesteps", help="Total timesteps for training (default: 100000)"
+    ),
+    name: str = typer.Option(
+        None,
+        "--name",
+        help="Custom name for the saved model (default: None, uses model type)",
+    ),
 ):
     """
     Train the model with the given name.
@@ -138,7 +150,9 @@ def train(
         cleanup_func=cleanup,
         server=server,
         no_docker=NO_DOCKER,
-        opponent=opponent
+        opponent=opponent,
+        total_timesteps=timesteps,
+        name=name,
     )
 
 
