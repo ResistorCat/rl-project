@@ -6,3 +6,5 @@ colorlog
 matplotlib
 pandas
 numpy
+tqdm
+rich

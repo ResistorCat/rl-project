@@ -54,7 +54,7 @@ def initialize(no_docker: bool = False):
         return
 
     # Check Docker availability
-    logger.info("🐳 Checking Docker availability...")
+    logger.debug("🐳 Checking Docker availability...")
     if not check_docker_availability():
         logger.error("❌ Docker is not available or not running on this system")
         logger.info("To run without Docker, use the --no-docker flag")
@@ -80,11 +80,9 @@ def initialize(no_docker: bool = False):
     try:
         server = PokemonShowdownServer()
         if not server.is_running():
-            logger.info("🚀 Starting Pokémon Showdown server...")
             if not server.start():
                 logger.error("❌ Failed to start the server")
                 raise typer.Exit(code=1)
-            logger.info("✅ Server started successfully")
         else:
             logger.info("✅ Server is already running")
     except Exception as e:
@@ -124,6 +122,19 @@ def train(
         "--dev",
         help="Run in development mode (faster training with 5000 timesteps for testing)",
     ),
+    opponent: RLPlayer = typer.Option(
+        RLPlayer.RANDOM,
+        "--opponent",
+        help="Opponent player type for training (default: RANDOM)",
+    ),
+    timesteps: int = typer.Option(
+        100_000, "--timesteps", help="Total timesteps for training (default: 100000)"
+    ),
+    name: str = typer.Option(
+        None,
+        "--name",
+        help="Custom name for the saved model (default: None, uses model type)",
+    ),
 ):
     """
     Train the model with the given name.
@@ -137,16 +148,29 @@ def train(
         cleanup_func=cleanup,
         server=server,
         no_docker=NO_DOCKER,
+        opponent=opponent,
+        total_timesteps=timesteps,
+        name=name,
     )
 
 
 @app.command()
 def evaluate(
     model: RLModel = RLModel.PPO,
+    name: str = typer.Option(
+        None,
+        "--name",
+        help="Name of the model to evaluate (default: None, uses model type)",
+    ),
     opponents: list[RLPlayer] = typer.Option(
-        [RLPlayer.RANDOM, RLPlayer.MAX, RLPlayer.DQN],
-        "--opponents",
-        help="List of opponents to evaluate against (default: all available players)",
+        [RLPlayer.RANDOM, RLPlayer.MAX],
+        "--against",
+        help="List of opponents to evaluate against",
+    ),
+    battles: int = typer.Option(
+        1000,
+        "--battles",
+        help="Number of battles to run for evaluation (default: 1000)",
     ),
 ):
     """
@@ -159,7 +183,38 @@ def evaluate(
         cleanup_func=cleanup,
         no_docker=NO_DOCKER,
         opponents=opponents,
+        num_battles=battles,
+        name=name,
     )
+
+
+@app.command()
+def clean(
+    output: bool = typer.Option(
+        True, "--output", help="Clean up output directories and files"
+    ),
+):
+    """
+    Clean up resources, particularly stop the server if it was started.
+    """
+    cleanup()
+    if output:
+        import shutil
+        from utils.output_utils import get_output_dir
+
+        logger = logging.getLogger("Cleanup")
+        output_dir = get_output_dir()
+        logger.info(f"🗑️ Cleaning up output directory: {output_dir}")
+
+        # Remove the output directory if it exists
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+            logger.info(f"✅ Output directory {output_dir} cleaned up")
+        else:
+            logger.info(
+                f"ℹ️ Output directory {output_dir} does not exist, nothing to clean"
+            )
+    typer.echo("✅ Cleanup completed successfully")
 
 
 if __name__ == "__main__":

@@ -11,6 +11,7 @@ class RLModel(str, Enum):
 
 
 class RLPlayer(str, Enum):
-    DQN = "DQNPlayer"
-    RANDOM = "RandomPlayer"
-    MAX = "MaxBasePowerPlayer"
+    DQN_RANDOM = "dqn_random"
+    DQN_MAX = "dqn_max"
+    RANDOM = "random"
+    MAX = "max"
