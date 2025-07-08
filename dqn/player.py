@@ -2,7 +2,7 @@ from dqn.embedding import enhanced_embed_battle
 from dqn.observation_space import get_embedding_dimension
 from baseline.players import BaselinePlayer
 from utils.model import get_valid_action_mask, enhanced_action_to_order
-from poke_env.environment import Battle
+from poke_env.battle import Battle
 import torch
 import numpy as np
 from poke_env.player import DefaultBattleOrder
@@ -66,3 +66,28 @@ class OurDQNPlayer(BaselinePlayer):
     
   def action_to_order(self, action, battle, fake=False, strict=True):
     return enhanced_action_to_order(action, battle, fake, strict)
+
+
+
+class LessDQNPlayer(OurDQNPlayer):
+  def __init__(self, model_path, account_configuration, battle_format="gen9randombattle"):
+    super().__init__(model_path, account_configuration, battle_format)
+
+    self.observations_dim = get_embedding_dimension(
+        include_active_pokemon=True,
+        include_status=False,
+        include_types=False,
+        include_boosts=False,
+        include_fainted=False,
+        status_one_hot=True
+    )
+  
+  def embed_battle(self, battle):
+    return enhanced_embed_battle(
+        battle,
+        include_active_pokemon=True,
+        include_status=False,
+        include_types=False,
+        include_boosts=False,
+        include_fainted=False,
+        status_one_hot=True)

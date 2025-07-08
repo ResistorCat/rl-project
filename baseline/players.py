@@ -1,8 +1,8 @@
 import random
 from stable_baselines3 import DQN
 from poke_env.player import Player
-from poke_env.environment import Battle
-from poke_env.player import DefaultBattleOrder, BattleOrder
+from poke_env.battle import Battle
+from poke_env.player import DefaultBattleOrder, BattleOrder, SingleBattleOrder
 import torch
 import numpy as np
 
@@ -62,12 +62,12 @@ class BaselinePlayer(Player):
 
         self.times_random_choice += 1
         print(">>>> Elige acción por defecto")  
-        return self.choose_random_move(battle)  
+        return self.choose_random_move(battle)
 
     def choose_random_move(self, battle: Battle) -> BattleOrder:
-      available_orders = [BattleOrder(move) for move in battle.available_moves]
+      available_orders = [SingleBattleOrder(move) for move in battle.available_moves]
       available_orders.extend(
-        [BattleOrder(switch) for switch in battle.available_switches]
+        [SingleBattleOrder(switch) for switch in battle.available_switches]
       )
 
       if available_orders:
@@ -101,7 +101,7 @@ class BaselinePlayer(Player):
         :return: Formatted move order
         :rtype: str
         """
-        return BattleOrder(
+        return SingleBattleOrder(
             order,
             mega=mega,
             move_target=move_target,
@@ -131,9 +131,9 @@ class SimpleRandomPlayer(Player):
       return Player.choose_default_move()
   
   def generate_move(self, battle: Battle) -> BattleOrder:
-    available_orders = [BattleOrder(move) for move in battle.available_moves]
+    available_orders = [SingleBattleOrder(move) for move in battle.available_moves]
     available_orders.extend(
-      [BattleOrder(switch) for switch in battle.available_switches]
+      [SingleBattleOrder(switch) for switch in battle.available_switches]
     )
 
     if available_orders:

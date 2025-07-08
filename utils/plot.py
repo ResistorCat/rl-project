@@ -2,7 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 # El número que se usa para calcular el WIN RATIO
-WINDOW = 25
+WINDOW = 100
 
 df = pd.read_csv("results/our_dqn.monitor_parcial.csv", comment='#')
 

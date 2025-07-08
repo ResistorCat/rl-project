@@ -1,5 +1,5 @@
 from poke_env import AccountConfiguration, cross_evaluate
-from poke_env.player import SingleAgentWrapper
+from poke_env.environment import SingleAgentWrapper
 
 from baseline.players import BaselinePlayer, SimpleRandomPlayer
 

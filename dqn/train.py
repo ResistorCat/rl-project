@@ -1,8 +1,8 @@
 from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
-from poke_env.player import SingleAgentWrapper
+from poke_env.environment import SingleAgentWrapper
 
-from dqn.environment import FirstDQNSinglesEnv
+from dqn.environment import OurDQNSinglesEnv
 from baseline.players import SimpleRandomPlayer
 
 
@@ -28,7 +28,7 @@ def train(
   model_path: str = "models/our_dqn_pokemon_model"
   ):
 
-  env = FirstDQNSinglesEnv(
+  env = OurDQNSinglesEnv(
     battle_format=f"gen9randombattle",
     log_level=25,
     start_challenging=True,

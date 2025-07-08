@@ -1,7 +1,8 @@
 import numpy as np
 from gymnasium.spaces import Box, Discrete
-from poke_env.player import SinglesEnv, BattleOrder
-from poke_env.environment import Battle
+from poke_env.player import BattleOrder
+from poke_env.environment import SinglesEnv
+from poke_env.battle import Battle
 
 from utils.model import simple_embed_battle, simple_action_to_order, simple_order_to_action
 

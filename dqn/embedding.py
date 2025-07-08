@@ -1,5 +1,5 @@
 import numpy as np
-from poke_env.environment import Battle, Pokemon
+from poke_env.battle import Battle, Pokemon
 
 TYPE_LIST = [
     "normal", "fire", "water", "electric", "grass", "ice", "fighting",
@@ -20,9 +20,11 @@ def get_move_features(battle: Battle):
     moves = []
     for i in range(4):  # hasta 4 movimientos
         if i < len(battle.active_pokemon.moves):
-            available_moves = battle.available_moves
             move = list(battle.active_pokemon.moves.values())[i]
-            is_disabled = not move in available_moves
+            is_disabled = True
+            for available_move in battle.available_moves:
+                if available_move.id == move.id:
+                    is_disabled = False
             moves.extend([
                 move.base_power / 100 if move.base_power else 0,
                 move.accuracy / 100 if move.accuracy else 1,

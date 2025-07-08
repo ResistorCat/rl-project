@@ -4,17 +4,20 @@ from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 from baseline.players import BaselinePlayer, SimpleRandomPlayer
-from dqn.player import OurDQNPlayer
+from dqn.player import OurDQNPlayer, LessDQNPlayer
 
 ##########################################
 COMPARE_WITH_RANDOM_PLAYER        = True
-COMPARE_WITH_MAX_PLAYER           = False
+COMPARE_WITH_MAX_PLAYER           = True
 COMPARE_WITH_HEURISTICS_PLAYER    = False
-COMPARE_WITH_BASELINE_DQN_PLAYER  = True
-COMPARE_WITH_OUR_FIRST_DQN_PLAYER = True
+COMPARE_WITH_BASELINE_DQN_PLAYER  = False
+COMPARE_WITH_DQN_PLAYER_PHASE_1   = False
+COMPARE_WITH_DQN_PLAYER_PHASE_1_V_1   = False
+COMPARE_WITH_DQN_PLAYER_PHASE_2   = False
+COMPARE_WITH_DQN_PLAYER_PHASE_3   = False
 COMPARE_WITH_OUR_PPO_PLAYER       = False
 
-NUM_CHALLENGES = 10
+NUM_CHALLENGES = 1000
 ##########################################
 
 
@@ -50,9 +53,24 @@ async def main(num_challenges: int = 5):
       account_configuration=AccountConfiguration("BL DQN Bot", None)
     )
 
-    our_dqn_player = OurDQNPlayer(
-      "models/our_dqn_pokemon_model",
-      account_configuration=AccountConfiguration("Our DQN Bot", None)
+    DQN_PLAYER_PHASE_1 = OurDQNPlayer(
+      "checkpoints/dqn_final_random",
+      account_configuration=AccountConfiguration("P1 DQN Bot", None)
+    )
+
+    DQN_PLAYER_PHASE_2 = OurDQNPlayer(
+      "checkpoints/dqn_final_max",
+      account_configuration=AccountConfiguration("P2 DQN Bot", None)
+    )
+
+    DQN_PLAYER_PHASE_3 = OurDQNPlayer(
+      "checkpoints/dqn_final_heuristic",
+      account_configuration=AccountConfiguration("P3 DQN Bot", None)
+    )
+
+    DQN_PLAYER_PHASE_1_V1 = LessDQNPlayer(
+      "checkpoints/1_dqn_final_random",
+      account_configuration=AccountConfiguration("P1V1 DQN Bot", None)
     )
 
     players = []
@@ -64,8 +82,14 @@ async def main(num_challenges: int = 5):
       players.append(simple_heuristics_opponent)
     if COMPARE_WITH_BASELINE_DQN_PLAYER:
       players.append(dqn_player)
-    if COMPARE_WITH_OUR_FIRST_DQN_PLAYER:
-      players.append(our_dqn_player)
+    if COMPARE_WITH_DQN_PLAYER_PHASE_1:
+      players.append(DQN_PLAYER_PHASE_1)
+    if COMPARE_WITH_DQN_PLAYER_PHASE_2:
+      players.append(DQN_PLAYER_PHASE_2)
+    if COMPARE_WITH_DQN_PLAYER_PHASE_3:
+      players.append(DQN_PLAYER_PHASE_3)
+    if COMPARE_WITH_DQN_PLAYER_PHASE_1_V_1:
+      players.append(DQN_PLAYER_PHASE_1_V1)
 
     # Ejecutar una batalla
     results = await cross_evaluate(players, n_challenges=num_challenges)

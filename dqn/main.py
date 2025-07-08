@@ -34,7 +34,7 @@ if __name__ == "__main__":
       max_grad_norm=10,
       policy_kwargs=dict(net_arch=[256, 128]), # Red más profunda y con más capacidad
       device="cuda",
-      total_timesteps=100_000,                 # Entrenamiento más prolongado
+      total_timesteps=50_000,                 # Entrenamiento más prolongado
       csv_path = SAVE_CSV_PATH,
       model_path = SAVE_MODEL_PATH
     )

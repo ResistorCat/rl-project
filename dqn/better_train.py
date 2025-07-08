@@ -1,39 +1,39 @@
 from stable_baselines3 import DQN
 from stable_baselines3.common.monitor import Monitor
-from poke_env.player import SingleAgentWrapper
+from poke_env.environment import SingleAgentWrapper
 from stable_baselines3.common.callbacks import CheckpointCallback
 from poke_env.player.baselines import MaxBasePowerPlayer, SimpleHeuristicsPlayer
 from poke_env.ps_client.server_configuration import LocalhostServerConfiguration
 
 
-from dqn.environment import FirstDQNSinglesEnv
+from dqn.environment import OurDQNSinglesEnv
 from baseline.players import SimpleRandomPlayer
 
 TOTAL_TIMESTEPS = {
-    "random": 300_000,
-    "max": 400_000,
-    "heuristic": 500_000,
+    "random": 100_000,
+    "max": 100_000,
+    "heuristic": 100_000,
 }
 
 SAVE_DIR = "./checkpoints"
 
 checkpoint_callback = CheckpointCallback(
   save_freq=100_000, save_path='./checkpoints/',
-  name_prefix='dqn_model'
+  name_prefix='1dqn_model'
 )
 
-def train_against_opponent(opponent, phase_name, model=None):
+def train_against_opponent(opponent, phase_name, model_path=None):
     print(f"\n===== ENTRENANDO CONTRA: {phase_name.upper()} =====")
 
-    env = FirstDQNSinglesEnv(
+    env = OurDQNSinglesEnv(
         battle_format=f"gen9randombattle",
-        log_level=25,
-        start_challenging=True,
+        log_level=30,
         strict=False,
+        
     )
 
     env = SingleAgentWrapper(env, opponent)
-    env = Monitor(env, filename=f"results/our_dqn_against_{phase_name}")
+    env = Monitor(env, filename=f"results/1_our_dqn_against_{phase_name}")
 
     # Checkpoint automático cada 100k steps
     checkpoint_callback = CheckpointCallback(
@@ -42,7 +42,7 @@ def train_against_opponent(opponent, phase_name, model=None):
         name_prefix="dqn_model"
     )
 
-    if model is None:
+    if model_path is None:
         model = DQN(
             "MlpPolicy",
             env,
@@ -63,34 +63,39 @@ def train_against_opponent(opponent, phase_name, model=None):
             policy_kwargs=dict(net_arch=[256, 128]),
             device="cuda",
             tensorboard_log=f"{SAVE_DIR}/logs")
+    else:
+        model = DQN.load(model_path, env, device="cuda")
 
     model.learn(
         total_timesteps=TOTAL_TIMESTEPS[phase_name],
         callback=checkpoint_callback,
     )
 
-    model.save(f"{SAVE_DIR}/dqn_final_{phase_name}")
+
+    model.save(f"{SAVE_DIR}/1_dqn_final_{phase_name}")
     env.close()
     return model
+
+
 
 
 
 # -----------------------------------------------
 # Fase 1: contra RandomPlayer
 # -----------------------------------------------
-random_opponent = SimpleRandomPlayer(battle_format="gen9randombattle")
-model = train_against_opponent(random_opponent, phase_name="random")
+# random_opponent = SimpleRandomPlayer(battle_format="gen9randombattle")
+# train_against_opponent(random_opponent, phase_name="random")
 
 # -----------------------------------------------
 # Fase 2: contra MaxBasePowerPlayer
 # -----------------------------------------------
 max_opponent = MaxBasePowerPlayer(battle_format="gen9randombattle")
-model = train_against_opponent(max_opponent, phase_name="max", model=model)
+train_against_opponent(max_opponent, phase_name="max", model_path=f"{SAVE_DIR}/dqn_final_random")
 
 # -----------------------------------------------
 # Fase 3: contra SimpleHeuristicsPlayer
 # -----------------------------------------------
 heuristic_opponent = SimpleHeuristicsPlayer(battle_format="gen9randombattle")
-model = train_against_opponent(heuristic_opponent, phase_name="heuristic", model=model)
+train_against_opponent(heuristic_opponent, phase_name="heuristic", model_path=f"{SAVE_DIR}/dqn_final_max")
 
 print("\n✅ Entrenamiento completo")
